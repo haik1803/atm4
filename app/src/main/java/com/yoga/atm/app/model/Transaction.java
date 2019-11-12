@@ -1,6 +1,6 @@
 package com.yoga.atm.app.model;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -13,8 +13,6 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
 
 import com.yoga.atm.app.enumerable.TransactionType;
 
@@ -25,8 +23,8 @@ public class Transaction {
 	public Transaction() {
 	}
 
-	public Transaction(TransactionType type, Account account, Double amount, Date date, Account destinationAccount,
-			String reference) {
+	public Transaction(TransactionType type, Account account, Double amount, LocalDateTime date,
+			Account destinationAccount, String reference) {
 		this.type = type;
 		this.account = account;
 		this.amount = amount;
@@ -54,9 +52,8 @@ public class Transaction {
 	@JoinColumn(name = "destination_account", nullable = true)
 	private Account destinationAccount;
 
-	@Temporal(TemporalType.TIMESTAMP)
-	@Column(name = "date", length = 19)
-	private Date date;
+	@Column
+	private LocalDateTime date;
 
 	@Column(name = "reference", length = 6)
 	private String reference;
@@ -101,11 +98,11 @@ public class Transaction {
 		this.destinationAccount = destinationAccount;
 	}
 
-	public Date getDate() {
+	public LocalDateTime getDate() {
 		return date;
 	}
 
-	public void setDate(Date date) {
+	public void setDate(LocalDateTime date) {
 		this.date = date;
 	}
 

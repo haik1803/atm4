@@ -8,8 +8,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -171,7 +171,7 @@ class AppApplicationTests {
 				.perform(post("/transfer").session(mockLogIn()).param("destination", "247819")
 						.param("reference", "123456").param("amount", "10"))
 				.andExpect(redirectedUrl("/transaction"))
-				.andExpect(flash().attribute("message", "Invalid account<br>"));
+				.andExpect(flash().attribute("message", containsString("Invalid account")));
 	}
 
 	// When creating a succesful transaction, it's expected to have this transaction
@@ -197,8 +197,8 @@ class AppApplicationTests {
 		Account to = accountService.findByAccountNumber("200000");
 		List<Transaction> listTransaction = new ArrayList<Transaction>();
 		for (int i = 0; i < 5; i++) {
-			Transaction t = new Transaction(TransactionType.TRANSFER, from, (double) (i + 1) * 10, new Date(), to,
-					"00000" + i);
+			Transaction t = new Transaction(TransactionType.TRANSFER, from, (double) (i + 1) * 10, LocalDateTime.now(),
+					to, "00000" + i);
 			listTransaction.add(transactionService.save(t));
 		}
 
@@ -221,8 +221,8 @@ class AppApplicationTests {
 		List<Transaction> listTransaction = new ArrayList<Transaction>();
 		Transaction exclude = new Transaction();
 		for (int i = 0; i < 6; i++) {
-			Transaction t = new Transaction(TransactionType.TRANSFER, from, (double) (i + 1) * 10, new Date(), to,
-					"00000" + (i + 1));
+			Transaction t = new Transaction(TransactionType.TRANSFER, from, (double) (i + 1) * 10, LocalDateTime.now(),
+					to, "00000" + (i + 1));
 			t = transactionService.save(t);
 			listTransaction.add(t);
 			if (i == 0)

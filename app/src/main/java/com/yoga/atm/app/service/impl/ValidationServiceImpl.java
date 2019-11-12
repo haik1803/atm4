@@ -37,7 +37,7 @@ public class ValidationServiceImpl implements ValidationService {
 
 	@Value("${app.amount.maximum}")
 	String maximumWithdrawMessage;
-	
+
 	@Value("${app.accountnumber.size}")
 	String accountNumberLengthMessage;
 
@@ -57,7 +57,8 @@ public class ValidationServiceImpl implements ValidationService {
 		} else if (accountNumber.length() != 6) {
 			throw new WrongInputException(accountNumberLengthMessage);
 		}
-		Account account = repository.findById(accountNumber).get();
+		Account account = repository.findById(accountNumber).isPresent() ? repository.findById(accountNumber).get()
+				: null;
 		if (account == null) {
 			throw new WrongInputException(invalidAccountMessage);
 		}

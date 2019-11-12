@@ -1,9 +1,6 @@
 package com.yoga.atm.app.controller;
 
 import java.text.DecimalFormat;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -74,9 +71,7 @@ public class ViewTransactionController {
 			for (Transaction transaction : listTransaction) {
 				row = new ArrayList<String>();
 				row.add(String.valueOf(transaction.getId()));
-				LocalDateTime date = Instant.ofEpochMilli(transaction.getDate().getTime())
-						.atZone(ZoneId.systemDefault()).toLocalDateTime();
-				row.add(date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm a")));
+				row.add(transaction.getDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm a")));
 				row.add(transaction.getType().toString());
 				row.add(formatter.format(transaction.getAmount()));
 				if (transaction.getDestinationAccount() != null)

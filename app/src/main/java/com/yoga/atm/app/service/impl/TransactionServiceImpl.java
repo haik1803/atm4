@@ -1,6 +1,6 @@
 package com.yoga.atm.app.service.impl;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +33,7 @@ public class TransactionServiceImpl implements TransactionService {
 			account = accountRepository.findByAccountNumber(accountNumber).get(0);
 			account.setBalance(account.getBalance() - Double.valueOf(amount));
 			Transaction transaction = new Transaction(TransactionType.WITHDRAW, account, Double.valueOf(amount),
-					new Date(), null, null);
+					LocalDateTime.now(), null, null);
 			account = accountRepository.save(account);
 			transactionRepository.save(transaction);
 		} catch (Exception e) {
@@ -55,7 +55,7 @@ public class TransactionServiceImpl implements TransactionService {
 			account.setBalance(account.getBalance() - Double.valueOf(amount));
 			destAccount.setBalance(destAccount.getBalance() + Double.valueOf(amount));
 			Transaction transaction = new Transaction(TransactionType.TRANSFER, account, Double.valueOf(amount),
-					new Date(), destAccount, reference);
+					LocalDateTime.now(), destAccount, reference);
 			account = accountRepository.save(account);
 			accountRepository.save(destAccount);
 			transactionRepository.save(transaction);
