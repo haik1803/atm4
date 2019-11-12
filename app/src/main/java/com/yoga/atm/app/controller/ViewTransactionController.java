@@ -11,8 +11,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.core.env.Environment;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -31,15 +30,13 @@ import com.yoga.atm.app.response.DatatableResponse;
 import com.yoga.atm.app.service.TransactionService;
 
 @Controller
-@PropertySource("classpath:message.properties")
-@RequestMapping("")
 public class ViewTransactionController {
 
 	@Autowired
-	private Environment env;
-
-	@Autowired
 	private TransactionService transactionService;
+
+	@Value("${app.unknown.error}")
+	String somethingWrongMessage;
 
 	@RequestMapping(value = "/viewTransaction", method = RequestMethod.GET)
 	public ModelAndView inputAccountNumber(HttpServletRequest request, RedirectAttributes redirectAttributes) {
@@ -50,7 +47,7 @@ public class ViewTransactionController {
 			e.printStackTrace();
 			SecurityContextHolder.getContext().setAuthentication(null);
 			view = new ModelAndView("redirect:/");
-			redirectAttributes.addFlashAttribute("message", env.getProperty("app.unknown.error"));
+			redirectAttributes.addFlashAttribute("message", somethingWrongMessage);
 		}
 		return view;
 	}

@@ -15,8 +15,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.core.env.Environment;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,17 +29,23 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.yoga.atm.app.Exception.WrongInputException;
 import com.yoga.atm.app.model.Account;
 import com.yoga.atm.app.service.AccountService;
+import com.yoga.atm.app.service.ValidationService;
 
 @Controller
 @PropertySource("classpath:message.properties")
-@RequestMapping("")
 public class WelcomeController {
 
 	@Autowired
-	private Environment env;
+	private AccountService accountService;
 
 	@Autowired
-	private AccountService accountService;
+	private ValidationService validateService;
+
+	@Value("${app.unknown.error}")
+	String somethingWrongMessage;
+
+	@Value("${app.upload.success}")
+	String uploadSuccessMessage;
 
 	@RequestMapping(value = { "/", "/login" }, method = RequestMethod.GET)
 	public ModelAndView inputAccountNumber(HttpServletRequest request, HttpSession session,
@@ -55,7 +61,7 @@ public class WelcomeController {
 			view.setViewName("welcome/inputAccountNumber");
 		} catch (Exception e) {
 			view = new ModelAndView("redirect:/");
-			redirectAttributes.addFlashAttribute("message", env.getProperty("app.unknown.error"));
+			redirectAttributes.addFlashAttribute("message", somethingWrongMessage);
 		}
 		return view;
 	}
@@ -75,10 +81,10 @@ public class WelcomeController {
 				accountService.save(account);
 			});
 			view = new ModelAndView("redirect:/");
-			redirectAttributes.addFlashAttribute("notif", env.getProperty("app.upload.success"));
+			redirectAttributes.addFlashAttribute("notif", uploadSuccessMessage);
 		} catch (Exception e) {
 			view = new ModelAndView("redirect:/");
-			redirectAttributes.addFlashAttribute("message", env.getProperty("app.unknown.error"));
+			redirectAttributes.addFlashAttribute("message", somethingWrongMessage);
 		}
 		return view;
 	}
@@ -90,15 +96,7 @@ public class WelcomeController {
 		try {
 			if (!"anonymousUser".equals(SecurityContextHolder.getContext().getAuthentication().getPrincipal()))
 				return new ModelAndView("redirect:/transaction");
-			String message = "";
-			if (accountNumber.length() != 6) {
-				message += env.getProperty("app.accountnumber.size");
-				throw new WrongInputException(message);
-			}
-			if (!accountNumber.matches("[0-9]+")) {
-				message += env.getProperty("app.accountnumber.number");
-				throw new WrongInputException(message);
-			}
+			validateService.validateAccountNumber(accountNumber);
 			view.addObject("accountNumber", accountNumber);
 			view.setViewName("welcome/inputPin");
 		} catch (WrongInputException e) {
@@ -106,7 +104,7 @@ public class WelcomeController {
 			redirectAttributes.addFlashAttribute("message", e.getMessage());
 		} catch (Exception e) {
 			view = new ModelAndView("redirect:/");
-			redirectAttributes.addFlashAttribute("message", env.getProperty("app.unknown.error"));
+			redirectAttributes.addFlashAttribute("message", somethingWrongMessage);
 		}
 		return view;
 	}

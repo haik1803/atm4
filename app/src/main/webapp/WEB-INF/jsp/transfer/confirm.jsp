@@ -77,7 +77,7 @@
 								<div class="tile">
 									<h4 class="text-uppercase balance">
 										<span>Amount</span>$<span style="color: black;"
-											th:text="${ amount }"></span>
+											th:text="${ formattedAmount }"></span>
 									</h4>
 								</div>
 							</div>

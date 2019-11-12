@@ -92,7 +92,8 @@ class AppApplicationTests {
 		accountService.save(acc);
 	}
 
-	// TESTCASE #1
+	// When adding an account, this account is expected to be there when getting
+	// user by number account
 	@Test
 	void expectedAccountToBeThere() throws Exception {
 		Account proofAccount = accountService.findByAccountNumber("100000");
@@ -102,7 +103,8 @@ class AppApplicationTests {
 		assertEquals(proofAccount.getBalance(), 200.0);
 	}
 
-	// TESTCASE #2
+	// When adding an account, this account is expected to be there when getting
+	// list of accounts
 	@Test
 	void expectedAccountToBeThereInList() throws Exception {
 		List<Account> proofAccount = (List<Account>) accountService.findAll();
@@ -116,7 +118,8 @@ class AppApplicationTests {
 		assertTrue(isInList);
 	}
 
-	// TESTCASE #3
+	// When creating a withdraw transaction to an account, this account is expected
+	// to have its balance reduced by the amount indicated in the withdraw
 	@Test
 	void reducedBalanceWhenWithdraw() throws Exception {
 		Account account = accountService.findByAccountNumber("100000");
@@ -126,7 +129,8 @@ class AppApplicationTests {
 		assertEquals(balance - 10, accountService.findByAccountNumber("100000").getBalance());
 	}
 
-	// TESTCASE #4
+	// When creating a withdraw transaction to an account, and the account does not
+	// have enough funds, it's expected to receive an error
 	@Test
 	void showingErrorWhenDoesntEnoughFundWithdraw() throws Exception {
 		this.mockMvc.perform(post("/withdrawl").param("amount", "210").session(mockLogIn()))
@@ -134,7 +138,9 @@ class AppApplicationTests {
 				.andExpect(flash().attribute("message", containsString("Insufficient balance $")));
 	}
 
-	// TESTCASE #5
+	// When creating a transfer transaction from account1 to account2, it's expected
+	// to have account1's balance reduced by the amount of the transaction and have
+	// account2's balance increased by the amount of the transaction
 	@Test
 	void transferSuccess() throws Exception {
 		Account account = accountService.findByAccountNumber("100000");
@@ -146,7 +152,8 @@ class AppApplicationTests {
 		assertEquals(balanceDestination + 20, accountService.findByAccountNumber("200000").getBalance());
 	}
 
-	// TESTCASE #6
+	// When creating a transfer transaction from account1 to account2, and account1
+	// does not have enough funds, operation should throw an error
 	@Test
 	void transferFailedDoesntEnoughFund() throws Exception {
 		this.mockMvc
@@ -156,7 +163,8 @@ class AppApplicationTests {
 				.andExpect(flash().attribute("message", containsString("Insufficient balance $")));
 	}
 
-	// TESTCASE #7
+	// When creating a transfer transaction from account1 to account2, and account2
+	// does not exist, then operation should fail
 	@Test
 	void transferFailedAccount2DoesntExist() throws Exception {
 		this.mockMvc
@@ -166,7 +174,8 @@ class AppApplicationTests {
 				.andExpect(flash().attribute("message", "Invalid account<br>"));
 	}
 
-	// TESTCASE #8
+	// When creating a succesful transaction, it's expected to have this transaction
+	// when getting list of last 10 transactions
 	@Test
 	void succesfullTransactionShowed() throws Exception {
 		Map<String, Object> model = this.mockMvc.perform(post("/withdrawl").param("amount", "10").session(mockLogIn()))
@@ -180,7 +189,8 @@ class AppApplicationTests {
 		assertTrue(stat);
 	}
 
-	// TESTCASE #9
+	// When creating a bunch of succesful transactions, it's expected to have this
+	// list of transactions when getting list of last 10 transactions
 	@Test
 	void succesfullBunchTransactionShowed() throws Exception {
 		Account from = accountService.findByAccountNumber("100000");
@@ -202,7 +212,8 @@ class AppApplicationTests {
 		assertTrue(stat);
 	}
 
-	// TESTCASE #10
+	// When creating more than 10 transactions, it's expected to have the 10 most
+	// recent transactions when getting list of last 10 transactions
 	@Test
 	void moreTransactionDoesntShowed() throws Exception {
 		Account from = accountService.findByAccountNumber("100000");

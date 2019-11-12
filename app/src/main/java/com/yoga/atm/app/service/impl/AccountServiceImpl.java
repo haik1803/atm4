@@ -25,15 +25,6 @@ public class AccountServiceImpl implements AccountService {
 	}
 
 	@Override
-	public Account validate(String accountNumber, String pin) {
-		try {
-			return repository.findByAccountNumberAndPin(accountNumber, pin).get(0);
-		} catch (Exception e) {
-			return null;
-		}
-	}
-
-	@Override
 	public Account save(Account account) {
 		return repository.save(account);
 	}
@@ -42,4 +33,5 @@ public class AccountServiceImpl implements AccountService {
 	public List<Account> findAll() {
 		return (List<Account>) repository.findAll();
 	}
+
 }

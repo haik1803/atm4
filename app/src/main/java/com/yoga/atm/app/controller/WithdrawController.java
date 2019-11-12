@@ -8,8 +8,7 @@ import java.util.ArrayList;
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.core.env.Environment;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -22,17 +21,19 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.yoga.atm.app.Exception.WrongInputException;
 import com.yoga.atm.app.model.Account;
 import com.yoga.atm.app.service.TransactionService;
+import com.yoga.atm.app.service.ValidationService;
 
 @Controller
-@PropertySource("classpath:message.properties")
-@RequestMapping("")
 public class WithdrawController {
 
 	@Autowired
-	private Environment env;
+	private ValidationService validationService;
 
 	@Autowired
 	private TransactionService transactionService;
+
+	@Value("${app.unknown.error}")
+	String unknownErrorMessage;
 
 	@RequestMapping(value = "/withdraw", method = RequestMethod.GET)
 	public ModelAndView withdraw(HttpServletRequest request, RedirectAttributes redirectAttributes) {
@@ -45,7 +46,7 @@ public class WithdrawController {
 			e.printStackTrace();
 			SecurityContextHolder.getContext().setAuthentication(null);
 			view = new ModelAndView("redirect:/");
-			redirectAttributes.addFlashAttribute("message", env.getProperty("app.unknown.error"));
+			redirectAttributes.addFlashAttribute("message", unknownErrorMessage);
 		}
 		return view;
 	}
@@ -56,25 +57,7 @@ public class WithdrawController {
 		ModelAndView view = new ModelAndView();
 		try {
 			Account account = (Account) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-			String message = "";
-			if (!amount.matches("[0-9]+")) {
-				message += env.getProperty("app.amount.number");
-				throw new WrongInputException(message);
-			} else {
-				if (Double.valueOf(amount) % 10 != 0) {
-					message += env.getProperty("app.invalid.amount");
-					throw new WrongInputException(message);
-				}
-				if (Double.valueOf(amount) > 1000) {
-					message += env.getProperty("app.amount.maximum");
-					throw new WrongInputException(message);
-				}
-				if (Double.valueOf(amount) > account.getBalance()) {
-					message += env.getProperty("app.amount.insufficient") + account.getBalance() + "<br>";
-					throw new WrongInputException(message);
-				}
-			}
-
+			validationService.validateAmountWithdraw(amount, account.getBalance());
 			account = transactionService.withdraw(account.getAccountNumber(), Double.valueOf(amount));
 			if (account == null)
 				throw new Exception();
@@ -94,7 +77,7 @@ public class WithdrawController {
 			e.printStackTrace();
 			SecurityContextHolder.getContext().setAuthentication(null);
 			view = new ModelAndView("redirect:/");
-			redirectAttributes.addFlashAttribute("message", env.getProperty("app.unknown.error"));
+			redirectAttributes.addFlashAttribute("message", unknownErrorMessage);
 		}
 		return view;
 	}

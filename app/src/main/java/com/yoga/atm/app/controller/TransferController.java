@@ -7,8 +7,7 @@ import java.util.ArrayList;
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.core.env.Environment;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -20,22 +19,20 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.yoga.atm.app.Exception.WrongInputException;
 import com.yoga.atm.app.model.Account;
-import com.yoga.atm.app.service.AccountService;
 import com.yoga.atm.app.service.TransactionService;
+import com.yoga.atm.app.service.ValidationService;
 
 @Controller
-@PropertySource("classpath:message.properties")
-@RequestMapping("")
 public class TransferController {
 
 	@Autowired
-	private Environment env;
-
-	@Autowired
-	private AccountService accountService;
-
-	@Autowired
 	private TransactionService transactionService;
+
+	@Autowired
+	private ValidationService validationService;
+
+	@Value("${app.unknown.error}")
+	String somethingWrongMessage;
 
 	@RequestMapping(value = "/transferDestination", method = RequestMethod.GET)
 	public ModelAndView transferDestination(HttpServletRequest request, RedirectAttributes redirectAttributes) {
@@ -45,7 +42,7 @@ public class TransferController {
 		} catch (Exception e) {
 			SecurityContextHolder.getContext().setAuthentication(null);
 			view = new ModelAndView("redirect:/");
-			redirectAttributes.addFlashAttribute("message", env.getProperty("app.unknown.error"));
+			redirectAttributes.addFlashAttribute("message", somethingWrongMessage);
 		}
 		return view;
 	}
@@ -55,16 +52,7 @@ public class TransferController {
 			@RequestParam(value = "destination", required = true) String destination) {
 		ModelAndView view = new ModelAndView();
 		try {
-			String message = "";
-			if (!destination.matches("[0-9]+")) {
-				message += env.getProperty("app.invalid.account");
-				throw new WrongInputException(message);
-			}
-			Account listAccount = accountService.findByAccountNumber(destination);
-			if (listAccount == null) {
-				message += env.getProperty("app.invalid.account");
-				throw new WrongInputException(message);
-			}
+			validationService.validateAccountNumber(destination);
 			view.addObject("destination", destination);
 			view.setViewName("transfer/amount");
 		} catch (WrongInputException e) {
@@ -73,7 +61,7 @@ public class TransferController {
 		} catch (Exception e) {
 			SecurityContextHolder.getContext().setAuthentication(null);
 			view = new ModelAndView("redirect:/");
-			redirectAttributes.addFlashAttribute("message", env.getProperty("app.unknown.error"));
+			redirectAttributes.addFlashAttribute("message", somethingWrongMessage);
 		}
 		return view;
 	}
@@ -85,28 +73,12 @@ public class TransferController {
 		ModelAndView view = new ModelAndView();
 		try {
 			Account account = (Account) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-			String message = "";
-			if (!amount.matches("[0-9]+")) {
-				message += env.getProperty("app.amount.number");
-				throw new WrongInputException(message);
-			} else {
-				if (Long.valueOf(amount) < 1) {
-					message += env.getProperty("app.amount.mintransfer");
-					throw new WrongInputException(message);
-				}
-				if (Long.valueOf(amount) > 1000) {
-					message += env.getProperty("app.amount.maxtransfer");
-					throw new WrongInputException(message);
-				}
-				if (Long.valueOf(amount) > account.getBalance()) {
-					message += env.getProperty("app.amount.insufficient") + account.getBalance() + "<br>";
-					throw new WrongInputException(message);
-				}
-			}
+			validationService.validateAmountTransfer(amount, account.getBalance());
 			view.addObject("accountNumber", account.getAccountNumber());
 			view.addObject("destination", destination);
 			DecimalFormat formatter = new DecimalFormat("#,###.00");
-			view.addObject("amount", formatter.format(Double.valueOf(amount)));
+			view.addObject("amount", Long.valueOf(amount));
+			view.addObject("formattedAmount", formatter.format(Double.valueOf(amount)));
 			view.addObject("reference", generateTransferId());
 			view.setViewName("transfer/confirm");
 		} catch (WrongInputException e) {
@@ -116,7 +88,7 @@ public class TransferController {
 			e.printStackTrace();
 			SecurityContextHolder.getContext().setAuthentication(null);
 			view = new ModelAndView("redirect:/");
-			redirectAttributes.addFlashAttribute("message", env.getProperty("app.unknown.error"));
+			redirectAttributes.addFlashAttribute("message", somethingWrongMessage);
 		}
 		return view;
 	}
@@ -125,41 +97,13 @@ public class TransferController {
 	public ModelAndView login(HttpServletRequest request, RedirectAttributes redirectAttributes,
 			@RequestParam(value = "destination", required = true) String destination,
 			@RequestParam(value = "reference", required = true) String reference,
-			@RequestParam(value = "amount", required = true) String amount) {
+			@RequestParam(value = "amount", required = true) long amount) {
 		ModelAndView view = new ModelAndView();
 		try {
 			Account account = (Account) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-			String message = "";
-			if (!destination.matches("[0-9]+")) {
-				message += env.getProperty("app.invalid.account");
-				throw new WrongInputException(message);
-			}
-
-			Account listAccount = accountService.findByAccountNumber(destination);
-			if (listAccount == null) {
-				message += env.getProperty("app.invalid.account");
-				throw new WrongInputException(message);
-			}
-			amount = amount.replace(".00", "");
-			if (!amount.matches("[0-9]+")) {
-				message += env.getProperty("app.amount.number");
-				throw new WrongInputException(message);
-			} else {
-				if (Long.valueOf(amount) < 1) {
-					message += env.getProperty("app.amount.mintransfer");
-					throw new WrongInputException(message);
-				}
-				if (Long.valueOf(amount) > 1000) {
-					message += env.getProperty("app.amount.maxtransfer");
-					throw new WrongInputException(message);
-				}
-				if (Long.valueOf(amount) > account.getBalance()) {
-					message += env.getProperty("app.amount.insufficient") + account.getBalance() + "<br>";
-					throw new WrongInputException(message);
-				}
-			}
-			account = transactionService.transfer(account.getAccountNumber(), Double.valueOf(amount), destination,
-					reference);
+			validationService.validateAccountNumber(destination);
+			validationService.validateAmountTransfer(String.valueOf(amount), account.getBalance());
+			account = transactionService.transfer(account.getAccountNumber(), amount, destination, reference);
 			if (account == null)
 				throw new Exception();
 			SecurityContextHolder.getContext()
@@ -175,7 +119,7 @@ public class TransferController {
 		} catch (Exception e) {
 			e.printStackTrace();
 			view = new ModelAndView("redirect:/");
-			redirectAttributes.addFlashAttribute("message", env.getProperty("app.unknown.error"));
+			redirectAttributes.addFlashAttribute("message", somethingWrongMessage);
 		}
 		return view;
 	}
